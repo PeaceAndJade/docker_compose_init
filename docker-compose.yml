@@ -1,0 +1,198 @@
+version: "3"
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./www/:/var/www/html/:rw
+      - ./conf/conf.d:/etc/nginx/conf.d/:ro
+      - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./log/:/var/log/dnmp/:rw
+    networks:
+      - net-php
+
+  php:
+    build: ./php/php72/
+    expose:
+      - "9000"
+    volumes:
+      - ./www/:/var/www/html/:rw
+      - ./conf/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./conf/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ./log/:/var/log/dnmp/:rw
+    networks:
+      - net-php
+      - net-mysql
+      - net-redis
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./conf/mysql.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+      - ./mysql/:/var/lib/mysql/:rw
+    networks:
+      - net-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+
+  # mysql_slave:
+  #   image: mysql:8.0
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - ./conf/mysql_slave.cnf:/etc/mysql/conf.d/mysql_slave.cnf:ro
+  #     - ./mysql_slave/:/var/lib/mysql_slave/:rw
+  #   networks:
+  #     - net-mysql
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: "123456"
+
+  redis:
+    image: redis:4.0
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./conf/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - net-redis
+
+  redis-master:
+  image: redis:4.0
+  command: redis-server /usr/local/etc/redis/redis-master.conf
+  networks:
+    - net-redis-master
+  volumes:
+    - ./conf/redis-master.conf:/usr/local/etc/redis/redis-master.conf:ro
+  ports:
+    - "6380:6379"
+
+  redis-slave:
+    image: redis:4.0
+    command: redis-server /usr/local/etc/redis/redis-slave.conf
+    networks:
+      - net-redis-slave
+    volumes:
+      - ./conf/redis-slave.conf:/usr/local/etc/redis/redis-slave.conf:ro
+    ports:
+      - "6381:6379"
+
+  postgres:
+    image: postgres:10.6
+    command: ["-c", "config_file=/etc/postgresql/postgresql.conf"]
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./conf/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      # - ./postgresql/:/var/lib/postgresql/data/:rw     # no use
+    networks:
+      - net-postgres
+    environment:
+      POSTGRES_PASSWORD: "docker1130!#%&("
+
+  # elasticsearch cluster-main
+  # elasticsearch_1:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:6.5.2
+  #   # 安装对应版本的中文分词插件
+  #   # ./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v6.5.2/elasticsearch-analysis-ik-6.5.2.zip
+  #   container_name: elasticsearch_1
+  #   environment:
+  #     - cluster.name=docker-cluster
+  #     - bootstrap.memory_lock=true
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #   volumes:
+  #     - ./elasticsearch_data_1:/usr/share/elasticsearch/data
+  #   ports:
+  #     - 9200:9200
+  #     - 9300:9300
+  #   networks:
+  #     - net-elasticsearch
+
+  # elasticsearch cluster-slave
+  # elasticsearch_2:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:6.5.2
+  #   container_name: elasticsearch_2
+  #   environment:
+  #     - cluster.name=docker-cluster
+  #     - bootstrap.memory_lock=true
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #     - "discovery.zen.ping.unicast.hosts=elasticsearch_1"
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #   volumes:
+  #     - ./elasticsearch_data_2:/usr/share/elasticsearch/data
+  #   networks:
+  #     - net-elasticsearch
+
+  # elasticsearch single
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.2
+    container_name: elasticsearch_lc
+    # 安装对应版本的中文分词插件
+    # ./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v6.5.2/elasticsearch-analysis-ik-6.5.2.zip
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - net-elasticsearch
+    environment:
+      - discovery.type=single_node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      # - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    # volumes:
+    #   - ./elasticsearch_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.5.2
+    container_name: kibana_lc
+    ports:
+      - "5601:5601"
+    # volumes:
+    #   - ./conf/kibana.yml:/usr/share/kibana/config/kibana.yml
+    networks:
+      - net-kibana
+    environment:
+      ELASTICSEARCH_URL: "http://192.168.0.131:9200"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:6.5.2
+    container_name: logstash_lc
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    volumes:
+      - ./conf/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./conf/logstash/conf.d/:/etc/logstash/conf.d/
+      - ./conf/logstash/record_last_run/:/etc/logstash/record_last_run/:rw
+      - ./conf/postgresql-42.2.5.jar:/usr/share/java/postgresql-42.2.5.jar
+    networks:
+      - net-logstash
+    # environment:
+    #   ELASTICSEARCH_URL: "http://172.31.44.168:9200"
+
+
+networks:
+  net-php:
+  net-mysql:
+  net-redis:
+  net-redis-master:
+  net-redis-slave:
+  net-postgres:
+  net-elasticsearch:
+  net-kibana:
+  net-logstash:
