@@ -1,9 +1,9 @@
-DNMP（Docker + Nginx + MySQL + PHP7/5）是一款全功能的**LNMP一键安装程序**。
+DNMP（Docker + Nginx + MySQL + PHP7 + Postgresql + Elasticsearch + ELK + rabbitmq）是一款全功能的**LNMP一键安装程序**。
 
 DNMP项目特点：
 1. `100%`开源
 2. `100%`遵循Docker标准
-2. 支持**多版本PHP**随意切换（PHP5.4、PHP5.6、PHP7.2)
+2. 支持PHP7.2
 3. 支持绑定任意**多个域名**
 4. 支持**HTTPS和HTTP/2**
 5. PHP源代码位于host中
@@ -24,8 +24,7 @@ DNMP项目特点：
 │   ├── mysql.cnf           MySQL用户配置文件
 │   ├── php-fpm.conf        PHP-FPM配置文件（部分会覆盖php.ini配置）
 │   └── php.ini             PHP默认配置文件
-├── docker-compose54.yml    PHP5.4 docker-compose项目文件
-├── docker-compose56.yml    PHP5.6 docker-compose项目文件
+├── docker-compose72.yml    PHP7.2 docker-compose项目文件
 ├── docker-compose.yml      PHP最新版docker-compose项目文件
 ├── log                     Nginx日志目录
 ├── mysql                   MySQL数据目录
@@ -64,15 +63,13 @@ DNMP项目特点：
 ```
 $ docker-compose up
 ```
-在`docker-compose stop`后，我们可以用下面的命令启动**PHP5.4**或**PHP5.6**:
+在`docker-compose stop`后，我们可以用下面的命令启动**PHP7.2**:
 ```
-$ docker-compose -f docker-compose54.yml up
-$ docker-compose -f docker-compose56.yml up
+$ docker-compose -f docker-compose72.yml up
 ```
 如果该版本是第一次启动，那么还需要加上`--build`参数构建，不然还是会启动最新版本：
 ```
-$ docker-compose -f docker-compose54.yml up --build
-$ docker-compose -f docker-compose56.yml up --build
+$ docker-compose -f docker-compose72.yml up --build
 ```
 在版本切换时，我们不需要修改任何配置文件，包括Nginx配置文件和php.ini等，
 除非是代码兼容错误，否则切换版本后应该都能正常工作。
@@ -149,26 +146,11 @@ $ docker exec -it dnmp_php_1 /bin/bash
 ```
 因为composer依赖于PHP，所以，是必须在容器里面操作composer的。
 
-## 7. phpmyadmin和phpredisadmin
-本项目默认在`docker-compose.yml`中开启了用于MySQL在线管理的*phpMyAdmin*，以及用于redis在线管理的*phpRedisAdmin*，可以根据需要修改或删除。
-
-### 7.1 phpMyAdmin
-phpMyAdmin容器映射到主机的端口地址是：`8080`，所以主机上访问phpMyAdmin的地址是：
-```
-http://localhost:8080
-```
-
 MySQL连接信息：
 - host：(本项目的MySQL容器网络)
 - port：`3306`
 - username：（手动在phpmyadmin界面输入）
 - password：（手动在phpmyadmin界面输入）
-
-### 7.2 phpRedisAdmin
-phpRedisAdmin容器映射到主机的端口地址是：`8081`，所以主机上访问phpMyAdmin的地址是：
-```
-http://localhost:8081
-```
 
 Redis连接信息如下：
 - host: (本项目的Redis容器网络)
@@ -188,15 +170,6 @@ xdebug.remote_port = 9000
 xdebug.remote_log = "/var/log/dnmp/php.xdebug.log"
 ```
 然后重启PHP容器。
-
-## 常见问题
-1. 遇到“No releases available for package "pecl.php.net/redis”
-    > 请参考： https://github.com/yeszao/dnmp/issues/10
-
-说明：**这个问题主要是受国内网络环境影响，现在PHP7以上的版本直接采用从源码安装扩展，所以这个问题已经没有了。**
-
-2. PHP5.6错误“ibfreetype6-dev : Depends: zlib1g-dev but it is not going to be installed or libz-dev”
-    > 请参考： https://github.com/yeszao/dnmp/issues/39
 
 ## License
 MIT
