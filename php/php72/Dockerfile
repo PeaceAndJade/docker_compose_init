@@ -13,7 +13,7 @@ COPY ./sources.list.stretch /etc/apt/sources.list
 # 4. xml, xmlrpc, wddx require libxml2-dev and libxslt-dev.
 # 5. Line `&& :\` is just for better reading and do nothing.
 RUN apt-get update \
-    && apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng-dev \
+    && apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng-dev librabbitmq-dev libssh-dev \
     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
     && docker-php-ext-install gd \
     && :\
@@ -129,3 +129,11 @@ RUN mkdir -p /tmp/xdebug \
     && docker-php-ext-install /tmp/xdebug \
     && rm -r /tmp/xdebug
 
+# Install amqp extension from source for rabbitmq
+COPY ./amqp-1.9.4.tgz /tmp/amqp.tgz
+RUN mkdir -p /tmp/amqp \
+    && tar -xf /tmp/amqp.tgz -C /tmp/amqp --strip-components=1 \
+    && rm /tmp/amqp.tgz \
+    && docker-php-ext-configure /tmp/amqp --enable-amqp \
+    && docker-php-ext-install /tmp/amqp \
+    && rm -r /tmp/amqp
