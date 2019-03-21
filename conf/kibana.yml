@@ -1,0 +1,4 @@
+# Default Kibana configuration from kibana-docker.
+
+elasticsearch.url: "http://192.168.0.122:9200"
+server.host: "0.0.0.0"
