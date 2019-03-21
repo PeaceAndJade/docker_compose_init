@@ -45,6 +45,7 @@ RUN apt-get update \
     && docker-php-ext-install sysvsem \
     && docker-php-ext-install sysvshm \
     && docker-php-ext-install opcache \
+    && docker-php-ext-install fileinfo \
     && :\
     && apt-get install -y libpq-dev \
     && docker-php-ext-install pgsql \
@@ -137,3 +138,13 @@ RUN mkdir -p /tmp/amqp \
     && docker-php-ext-configure /tmp/amqp --enable-amqp \
     && docker-php-ext-install /tmp/amqp \
     && rm -r /tmp/amqp
+
+# Install swoole extension from source
+COPY ./swoole-4.2.13.tgz /tmp/swoole.tgz
+RUN mkdir -p /tmp/swoole \
+    && tar -xf /tmp/swoole.tgz -C /tmp/swoole --strip-components=1 \
+    && rm /tmp/swoole.tgz \
+    && docker-php-ext-configure /tmp/swoole --enable-swoole \
+    && docker-php-ext-install /tmp/swoole \
+    && rm -r /tmp/swoole
+

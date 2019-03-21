@@ -186,6 +186,23 @@ services:
     #   ELASTICSEARCH_URL: "http://172.31.44.168:9200"
 
 
+  # rabbitmq-management:
+  #   image: rabbitmq:3.7-management
+  #   container_name: rabbitmq_lc
+  #   ports:
+  #     - "4369:4369"
+  #     - "5671:5671"
+  #     - "5672:5672"
+  #     - "15671:15671"
+  #     - "15672:15672"
+  #     - "25672:25672"
+  #   networks:
+  #     - net-rabbitmq
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: "rabbit0315"
+  #     RABBITMQ_DEFAULT_PASS: "docker0315rbt"
+  #     RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 0.3
+
 networks:
   net-php:
   net-mysql:
@@ -196,3 +213,4 @@ networks:
   net-elasticsearch:
   net-kibana:
   net-logstash:
+  # net-rabbitmq:
