@@ -53,6 +53,23 @@ services:
 
   redis:
     image: redis:4.0
+    deploy:                          # 部署设置
+      replicas: 1
+      resources:                     # 资源开销
+        limits:
+          cpus: '0.50'               # 单核，50%的性能
+          memory: 100M               # 内存限制100M
+        reservations:                # 保留性能
+          cpus: '0.25'               # 25%性能
+          memory: 20M                # 单核最低内存20M
+      restart_policy:                # 重新启动镜像条件
+        condition: on-failure        # One of none, on-failure or any (default: any)
+        delay: 30s                   # How long to wait between restart attempts, specified as a duration (default: 0).
+        max_attempts: 3              # 最大重新启动次数，How many times to attempt to restart a container before giving up (default: never give up).
+                                     # If the restart does not succeed within the configured window, this attempt doesn’t count toward the configured max_attempts value.
+                                     # For example, if max_attempts is set to ‘2’, and the restart fails on the first attempt, more than two restarts may be attempted.
+        window: 30s                  # How long to wait before deciding if a restart has succeeded, specified as a duration (default: decide immediately).
+                                     # eg. 2.5s 10s 1m30s 2h32m 5h34m56s
     command: redis-server /usr/local/etc/redis/redis.conf
     ports:
       - "6379:6379"
@@ -61,25 +78,25 @@ services:
     networks:
       - net-redis
 
-  redis-master:
-  image: redis:4.0
-  command: redis-server /usr/local/etc/redis/redis-master.conf
-  networks:
-    - net-redis-master
-  volumes:
-    - ./conf/redis-master.conf:/usr/local/etc/redis/redis-master.conf:ro
-  ports:
-    - "6380:6379"
+  # redis-master:
+  # image: redis:4.0
+  # command: redis-server /usr/local/etc/redis/redis-master.conf
+  # networks:
+  #   - net-redis-master
+  # volumes:
+  #   - ./conf/redis-master.conf:/usr/local/etc/redis/redis-master.conf:ro
+  # ports:
+  #   - "6380:6379"
 
-  redis-slave:
-    image: redis:4.0
-    command: redis-server /usr/local/etc/redis/redis-slave.conf
-    networks:
-      - net-redis-slave
-    volumes:
-      - ./conf/redis-slave.conf:/usr/local/etc/redis/redis-slave.conf:ro
-    ports:
-      - "6381:6379"
+  # redis-slave:
+  #   image: redis:4.0
+  #   command: redis-server /usr/local/etc/redis/redis-slave.conf
+  #   networks:
+  #     - net-redis-slave
+  #   volumes:
+  #     - ./conf/redis-slave.conf:/usr/local/etc/redis/redis-slave.conf:ro
+  #   ports:
+  #     - "6381:6379"
 
   postgres:
     image: postgres:10.6
@@ -135,83 +152,87 @@ services:
   #     - net-elasticsearch
 
   # elasticsearch single
-  elasticsearch:
-    # build: ./elasticsearch/elasticsearch65/
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.2
-    container_name: elasticsearch_lc
-    # 安装对应版本的中文分词插件
-    # ./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v6.5.2/elasticsearch-analysis-ik-6.5.2.zip
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    networks:
-      - net-elasticsearch
-    environment:
-      - discovery.type=single_node
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
-      # - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    # volumes:
-    #   - ./elasticsearch_data:/usr/share/elasticsearch/data
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:6.5.2
-    container_name: kibana_lc
-    ports:
-      - "5601:5601"
-    # volumes:
-    #   - ./conf/kibana.yml:/usr/share/kibana/config/kibana.yml
-    networks:
-      - net-kibana
-    environment:
-      ELASTICSEARCH_URL: "http://192.168.0.131:9200"
-
-  logstash:
-    image: docker.elastic.co/logstash/logstash:6.5.2
-    container_name: logstash_lc
-    ports:
-      - "5044:5044"
-      - "9600:9600"
-    volumes:
-      - ./conf/logstash.yml:/usr/share/logstash/config/logstash.yml
-      - ./conf/logstash/conf.d/:/etc/logstash/conf.d/
-      - ./conf/logstash/record_last_run/:/etc/logstash/record_last_run/:rw
-      - ./conf/postgresql-42.2.5.jar:/usr/share/java/postgresql-42.2.5.jar
-    networks:
-      - net-logstash
-    # environment:
-    #   ELASTICSEARCH_URL: "http://172.31.44.168:9200"
-
-
-  # rabbitmq-management:
-  #   image: rabbitmq:3.7-management
-  #   container_name: rabbitmq_lc
+  # elasticsearch:
+  #   # build: ./elasticsearch/elasticsearch65/
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:6.5.2
+  #   container_name: elasticsearch_lc
+  #   # 安装对应版本的中文分词插件
+  #   # ./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v6.5.2/elasticsearch-analysis-ik-6.5.2.zip
   #   ports:
-  #     - "4369:4369"
-  #     - "5671:5671"
-  #     - "5672:5672"
-  #     - "15671:15671"
-  #     - "15672:15672"
-  #     - "25672:25672"
+  #     - "9200:9200"
+  #     - "9300:9300"
   #   networks:
-  #     - net-rabbitmq
+  #     - net-elasticsearch
   #   environment:
-  #     RABBITMQ_DEFAULT_USER: "rabbit0315"
-  #     RABBITMQ_DEFAULT_PASS: "docker0315rbt"
-  #     RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 0.3
+  #     - discovery.type=single_node
+  #     - bootstrap.memory_lock=true
+  #     - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+  #     # - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #   # volumes:
+  #   #   - ./elasticsearch_data:/usr/share/elasticsearch/data
+
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:6.5.2
+  #   container_name: kibana_lc
+  #   ports:
+  #     - "5601:5601"
+  #   depends_on:
+  #     - elasticsearch
+  #   # volumes:
+  #   #   - ./conf/kibana.yml:/usr/share/kibana/config/kibana.yml
+  #   networks:
+  #     - net-kibana
+  #   environment:
+  #     ELASTICSEARCH_URL: "http://192.168.0.131:9200"
+
+  # logstash:
+  #   image: docker.elastic.co/logstash/logstash:6.5.2
+  #   container_name: logstash_lc
+  #   ports:
+  #     - "5044:5044"
+  #     - "9600:9600"
+  #   volumes:
+  #     - ./conf/logstash.yml:/usr/share/logstash/config/logstash.yml
+  #     - ./conf/logstash/conf.d/:/etc/logstash/conf.d/
+  #     - ./conf/logstash/record_last_run/:/etc/logstash/record_last_run/:rw
+  #     - ./conf/postgresql-42.2.5.jar:/usr/share/java/postgresql-42.2.5.jar
+  #   networks:
+  #     - net-logstash
+  #   # environment:
+  #   #   ELASTICSEARCH_URL: "http://172.31.44.168:9200"
+
+
+  rabbitmq-management:
+    image: rabbitmq:3.7-management
+    container_name: rabbitmq_lc
+    ports:
+      - "4369:4369"
+      - "5671:5671"
+      - "5672:5672"
+      - "15671:15671"
+      - "15672:15672"
+      - "25672:25672"
+    networks:
+      - net-rabbitmq
+    volumes:
+      - ./conf/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    # environment:
+    #   RABBITMQ_DEFAULT_USER: "rabbit0315"
+    #   RABBITMQ_DEFAULT_PASS: "docker0315rbt" 
+    #   RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 0.3
 
 networks:
   net-php:
   net-mysql:
   net-redis:
-  net-redis-master:
-  net-redis-slave:
+  # net-redis-master:
+  # net-redis-slave:
   net-postgres:
-  net-elasticsearch:
-  net-kibana:
-  net-logstash:
-  # net-rabbitmq:
+  # net-elasticsearch:
+  # net-kibana:
+  # net-logstash:
+  net-rabbitmq:
