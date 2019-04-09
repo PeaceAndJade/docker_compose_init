@@ -1,4 +1,4 @@
-DNMP（Docker + Nginx + MySQL + PHP7 + Postgresql + Elasticsearch + ELK + rabbitmq）是一款全功能的**LNMP一键安装程序**。
+DNMP（Docker + Nginx + MySQL + PHP7 + Postgresql + redis(主从的配置示例) + Elasticsearch + ELK + rabbitmq）是一款全功能的**LNMP一键安装程序**。
 
 DNMP项目特点：
 1. `100%`开源
